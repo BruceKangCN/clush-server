@@ -1,0 +1,9 @@
+[package]
+name = "clush-server"
+version = "0.1.0"
+authors = ["BruceKangCN <BruceKangCN@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+bytes = "1"
