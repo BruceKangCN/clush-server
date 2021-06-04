@@ -1,8 +1,15 @@
-use tokio::net::{TcpListener, TcpStream};
-use tokio::io::{AsyncReadExt, AsyncWriteExt, Result};
-use bytes::BytesMut;
-use std::str;
+use crate::task::Task;
+use tokio::net::TcpListener;
+use tokio::io::Result;
 
+/// a clush server
+///
+/// # Examples
+///
+/// ```
+/// let server = ClushServer::init().await?;
+/// server.start().await
+/// ```
 pub struct ClushServer {
     listener: TcpListener,
 }
@@ -10,7 +17,7 @@ pub struct ClushServer {
 impl ClushServer {
     /// create a clush server with the given TCP listener
     pub fn new(listener: TcpListener) -> ClushServer {
-        ClushServer{
+        ClushServer {
             listener,
         }
     }
@@ -37,30 +44,13 @@ impl ClushServer {
     /// start the event loop
     pub async fn start(&self) -> Result<()> {
         loop {
-            let (mut stream, _addr) = self.listener.accept().await?;
+            let (stream, _addr) = self.listener.accept().await?;
             tokio::spawn(async move {
-                process(&mut stream).await;
+                let mut task = Task::new(stream);
+                task.process().await
             });
         }
     }
-}
-
-/// process the stream
-async fn process(stream: &mut TcpStream) {
-    let mut buf = BytesMut::with_capacity(4096);
-    loop {
-        let n = stream.read_buf(&mut buf).await.unwrap();
-        if n == 0 {
-            break;
-        }
-        parse(&buf[..n]).await
-    }
-}
-
-// TODO: parse to ClushFrame
-/// parse the content and convert it to ClushFrame
-async fn parse(content: &[u8]) {
-    println!("{}", str::from_utf8(content).unwrap());
 }
 
 #[cfg(test)]
