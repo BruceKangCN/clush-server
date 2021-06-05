@@ -5,6 +5,7 @@ use bytes::{Bytes, BytesMut};
 
 static BUF_SIZE: usize = 4096;
 
+// TODO: add tokio_rustls TLS acceptor
 /// a clush server
 ///
 /// # Examples
@@ -137,6 +138,9 @@ impl Task {
 
         Ok(())
     }
+
+    // TODO: implement get_frame
+    // process(){while let frame = get_frame() {frame.process()}}
 
     // TODO: parse to ClushFrame
     /// parse the content and convert it to ClushFrame

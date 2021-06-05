@@ -6,4 +6,5 @@ edition = "2018"
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
+tokio-rustls = "0.22"
 bytes = "1"
