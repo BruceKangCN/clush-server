@@ -4,9 +4,9 @@ pub enum MessageType {
     None,
 }
 
-pub fn u32_from_bytes(bytes: &[u8]) -> u32 {
+pub fn u32_from_bytes(bytes: &[u8]) -> Result<u32, &str> {
     if bytes.len() < 4 {
-        panic!("insufficient data!")
+        return Err("insufficient data!");
     }
     let mut number: u32 = 0;
     for i in 0..4 {
@@ -14,12 +14,12 @@ pub fn u32_from_bytes(bytes: &[u8]) -> u32 {
         number |= bytes[i] as u32;
     }
 
-    number
+    Ok(number)
 }
 
-pub fn u64_from_bytes(bytes: &[u8]) -> u64 {
+pub fn u64_from_bytes(bytes: &[u8]) -> Result<u64, &str> {
     if bytes.len() < 8 {
-        panic!("insufficient data!")
+        return Err("insufficient data!");
     }
     let mut number: u64 = 0;
     for i in 0..8 {
@@ -27,7 +27,7 @@ pub fn u64_from_bytes(bytes: &[u8]) -> u64 {
         number |= bytes[i] as u64;
     }
 
-    number
+    Ok(number)
 }
 
 #[cfg(test)]
@@ -37,12 +37,12 @@ mod tests {
     #[test]
     fn u32_from_bytes_test() {
         let bytes = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-        assert_eq!(0x010203, u32_from_bytes(&bytes[..]))
+        assert_eq!(0x010203, u32_from_bytes(&bytes[..]).unwrap());
     }
 
     #[test]
     fn u64_from_bytes_test() {
         let bytes = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-        assert_eq!(0x01020304050607, u64_from_bytes(&bytes[..]))
+        assert_eq!(0x01020304050607, u64_from_bytes(&bytes[..]).unwrap());
     }
 }

@@ -111,13 +111,13 @@ impl Task {
             return Ok(());
         }
 
-        if n < 28 {
-            panic!("incomplete package!");
+        if n < 28 { // length of msg_type + from_id + to_id + size
+            panic!("incomplete package!")
         }
 
-        let from_id = u64_from_bytes(&buf[4..12]);
-        let to_id = u64_from_bytes(&buf[12..20]);
-        let size = u64_from_bytes(&buf[20..28]);
+        let from_id = u64_from_bytes(&buf[4..12]).unwrap();
+        let to_id = u64_from_bytes(&buf[12..20]).unwrap();
+        let size = u64_from_bytes(&buf[20..28]).unwrap();
         let mut frame = match u32_from_bytes(&buf[0..4]) {
             _ => ClushFrame::new(MessageType::None, from_id, to_id, size, BytesMut::from(&buf[28..n])), // TODO: convert u32 to enum
         };
