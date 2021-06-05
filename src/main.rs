@@ -5,10 +5,11 @@
 //! MIT License
 //! Copyright (c) 2021 Bruce Kang
 
-mod server;
-mod task;
+pub mod util;
 
-use crate::server::ClushServer;
+mod core;
+
+use crate::core::ClushServer;
 use tokio::io::Result;
 use std::env;
 
