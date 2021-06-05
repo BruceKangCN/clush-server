@@ -1,7 +1,7 @@
-use crate::util::{MessageType, u32_from_bytes, u64_from_bytes};
-use tokio::net::{TcpListener, TcpStream};
-use tokio::io::{AsyncReadExt, AsyncWriteExt, Result};
+use crate::util::{u32_from_bytes, u64_from_bytes, MessageType};
 use bytes::{Bytes, BytesMut};
+use tokio::io::{AsyncReadExt, AsyncWriteExt, Result};
+use tokio::net::{TcpListener, TcpStream};
 
 static BUF_SIZE: usize = 4096;
 
@@ -21,9 +21,7 @@ pub struct ClushServer {
 impl ClushServer {
     /// create a clush server with the given TCP listener
     pub fn new(listener: TcpListener) -> ClushServer {
-        ClushServer {
-            listener,
-        }
+        ClushServer { listener }
     }
 
     /// init a clush server with the default configuration
@@ -66,7 +64,13 @@ pub struct ClushFrame {
 }
 
 impl ClushFrame {
-    pub fn new(msg_type: MessageType, from_id: u64, to_id: u64, size: u64, content: BytesMut) -> ClushFrame {
+    pub fn new(
+        msg_type: MessageType,
+        from_id: u64,
+        to_id: u64,
+        size: u64,
+        content: BytesMut,
+    ) -> ClushFrame {
         ClushFrame {
             msg_type,
             from_id,
@@ -98,9 +102,7 @@ struct Task {
 impl Task {
     /// create a task to process the given stream
     fn new(stream: TcpStream) -> Task {
-        Task {
-            stream,
-        }
+        Task { stream }
     }
 
     /// process the stream
@@ -112,7 +114,8 @@ impl Task {
             return Ok(());
         }
 
-        if n < 28 { // length of msg_type + from_id + to_id + size
+        if n < 28 {
+            // length of msg_type + from_id + to_id + size
             panic!("incomplete package!")
         }
 
@@ -120,9 +123,14 @@ impl Task {
         let to_id = u64_from_bytes(&buf[12..20]).unwrap();
         let size = u64_from_bytes(&buf[20..28]).unwrap();
         let mut frame = match u32_from_bytes(&buf[0..4]) {
-            _ => ClushFrame::new(MessageType::None, from_id, to_id, size, BytesMut::from(&buf[28..n])), // TODO: convert u32 to enum
+            _ => ClushFrame::new(
+                MessageType::None,
+                from_id,
+                to_id,
+                size,
+                BytesMut::from(&buf[28..n]),
+            ), // TODO: convert u32 to enum
         };
-
 
         loop {
             let n = self.stream.read_buf(&mut buf).await?;

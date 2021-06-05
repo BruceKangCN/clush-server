@@ -10,8 +10,8 @@ pub mod util;
 mod core;
 
 use crate::core::ClushServer;
-use tokio::io::Result;
 use std::env;
+use tokio::io::Result;
 
 #[tokio::main]
 async fn main() -> Result<()> {
