@@ -9,6 +9,7 @@
 extern crate rbatis;
 
 pub mod entity;
+pub mod service;
 pub mod util;
 
 mod core;

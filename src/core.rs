@@ -103,7 +103,7 @@ impl ClushFrame {
 
     // }
 
-    // pub async fn write_frame(stream: &mut TcpStream) -> ClushFrame {
+    // pub async fn write_frame(stream: &mut TcpStream) -> Result<()> {
 
     // }
 
