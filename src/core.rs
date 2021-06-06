@@ -109,6 +109,12 @@ impl ClushFrame {
     pub fn to_bytes(&self) -> Bytes {
         let mut bytes_mut = BytesMut::with_capacity(0);
         match self.msg_type {
+            MessageType::UserMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&1)[..]),
+            MessageType::GroupMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&2)[..]),
+            MessageType::ImageMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&3)[..]),
+            MessageType::VideoMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&4)[..]),
+            MessageType::VoiceMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&5)[..]),
+            MessageType::FileMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&6)[..]),
             _ => bytes_mut.extend_from_slice(&u32_to_bytes(&0)[..]),
         }
         bytes_mut.extend_from_slice(&u64_to_bytes(&self.from_id)[..]);
@@ -205,11 +211,38 @@ impl Task {
     // TODO: implement process
     /// process the frame according to the frame type
     async fn process_frame(&self, frame: &ClushFrame) -> Result<()> {
-        Ok(())
+        match frame.msg_type {
+            _ => panic!("unimplemented!"),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn clush_frame_test() {
+        let frame = ClushFrame::new(
+            MessageType::UserMessage,
+            0,
+            0,
+            5,
+            BytesMut::from(&"hello"[..]),
+        );
+        assert_eq!(0, frame.from_id);
+        assert_eq!(0, frame.to_id);
+        assert_eq!(5, frame.size());
+        assert_eq!(BytesMut::from(&"hello"[..]), frame.content());
+        assert_eq!(
+            Bytes::from(
+                &[
+                    0u8, 0u8, 0u8, 1u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8,
+                    0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 0u8, 5u8, b'h', b'e', b'l',
+                    b'l', b'o'
+                ][..]
+            ),
+            frame.to_bytes()
+        );
+    }
 }

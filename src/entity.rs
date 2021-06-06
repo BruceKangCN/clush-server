@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 
 #[crud_enable]
 #[derive(Clone, Debug)]
-pub struct user {
+pub struct User {
     id: u64,
     username: String,
     password: String, // sha256
@@ -12,7 +12,7 @@ pub struct user {
 
 #[crud_enable]
 #[derive(Clone, Debug)]
-pub struct user_msg {
+pub struct UserMsg {
     id: u64,
     from_id: u64,
     to_id: u64,
@@ -22,14 +22,14 @@ pub struct user_msg {
 
 #[crud_enable]
 #[derive(Clone, Debug)]
-pub struct group {
+pub struct Group {
     id: u64,
     group_name: String,
 }
 
 #[crud_enable]
 #[derive(Clone, Debug)]
-pub struct group_member {
+pub struct GroupMember {
     id: u64,
     group_id: u64,
     user_id: u64,
@@ -38,7 +38,7 @@ pub struct group_member {
 
 #[crud_enable]
 #[derive(Clone, Debug)]
-pub struct group_msg {
+pub struct GroupMsg {
     id: u64,
     group_id: u64,
     user_id: u64,
@@ -48,7 +48,7 @@ pub struct group_msg {
 
 #[crud_enable]
 #[derive(Clone, Debug)]
-pub struct role {
+pub struct Role {
     id: u64,
     role_name: String,
 }
