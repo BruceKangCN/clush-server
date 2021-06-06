@@ -55,6 +55,7 @@ impl ClushServer {
     }
 }
 
+/// a frame used to communicate with clush client and server
 pub struct ClushFrame {
     msg_type: MessageType,
     from_id: u64,
@@ -80,21 +81,38 @@ impl ClushFrame {
         }
     }
 
+    /// append the given content to ClushFrame's content
     pub fn append(&mut self, content: &[u8]) -> &mut ClushFrame {
         self.content.extend_from_slice(&content);
 
         self
     }
 
+    /// get content part size
     pub fn size(&self) -> u64 {
         self.size
     }
 
+    /// get content part of the ClushFrame
     pub fn content(&self) -> Bytes {
         Bytes::from(self.content.clone())
     }
+
+    // TODO: implement read, write, process
+    // pub async fn read_frame(stream: &mut TcpStream) -> ClushFrame {
+
+    // }
+
+    // pub async fn write_frame(stream: &mut TcpStream) -> ClushFrame {
+
+    // }
+
+    // pub fn process(&mut self) -> Result<()> {
+    //     Ok(())
+    // }
 }
 
+/// a task to process the given TcpStream
 struct Task {
     stream: TcpStream,
 }
@@ -114,8 +132,8 @@ impl Task {
             return Ok(());
         }
 
+        // length of msg_type + from_id + to_id + size
         if n < 28 {
-            // length of msg_type + from_id + to_id + size
             panic!("incomplete package!")
         }
 
