@@ -5,6 +5,10 @@
 //! MIT License
 //! Copyright (c) 2021 Bruce Kang
 
+#[macro_use]
+extern crate rbatis;
+
+pub mod entity;
 pub mod util;
 
 mod core;
