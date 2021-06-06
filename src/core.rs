@@ -134,7 +134,7 @@ impl Task {
     /// process the stream
     async fn process(&mut self) -> Result<()> {
         while let Some(frame) = self.read_frame().await? {
-            self.process_frame(&frame).await.unwrap();
+            self.process_frame(&frame).await?;
         }
 
         Ok(())
@@ -194,7 +194,7 @@ impl Task {
 
     /// write a frame to the stream
     pub async fn write_frame(&mut self, frame: ClushFrame) -> Result<()> {
-        self.stream.write(&frame.to_bytes()[..]).await.unwrap();
+        self.stream.write(&frame.to_bytes()[..]).await?;
 
         Ok(())
     }
@@ -202,7 +202,6 @@ impl Task {
     // TODO: implement process
     /// process the frame according to the frame type
     async fn process_frame(&self, frame: &ClushFrame) -> Result<()> {
-        // println!("{}", str::from_utf8(content).unwrap());
         Ok(())
     }
 }
