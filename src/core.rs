@@ -100,6 +100,10 @@ impl ClushFrame {
         self.size
     }
 
+    pub fn update_size(&mut self) {
+        self.size = self.content.len() as u64;
+    }
+
     /// get content part of the ClushFrame
     pub fn content(&self) -> Bytes {
         Bytes::from(self.content.clone())
@@ -244,5 +248,18 @@ mod tests {
             ),
             frame.to_bytes()
         );
+    }
+
+    #[test]
+    fn update_size_test() {
+        let mut frame = ClushFrame::new(
+            MessageType::UserMessage,
+            0,
+            0,
+            0,
+            BytesMut::from(&"hello"[..]),
+        );
+        frame.update_size();
+        assert_eq!(5, frame.size());
     }
 }
