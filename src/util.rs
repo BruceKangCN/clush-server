@@ -33,6 +33,7 @@ pub fn u64_from_bytes(bytes: &[u8]) -> Result<u64, String> {
     Ok(number)
 }
 
+/// perform the conversion
 pub fn u32_to_bytes(number: &u32) -> Vec<u8> {
     let mut bytes = vec![0u8; 0];
     let mut n = *number;
@@ -44,6 +45,7 @@ pub fn u32_to_bytes(number: &u32) -> Vec<u8> {
     bytes
 }
 
+/// perform the conversion
 pub fn u64_to_bytes(number: &u64) -> Vec<u8> {
     let mut bytes = vec![0u8; 0];
     let mut n = *number;
@@ -78,6 +80,9 @@ mod tests {
 
     #[test]
     fn u64_to_bytes_test() {
-        assert_eq!(vec![0, 1, 2, 3, 4, 5, 6, 7], u64_to_bytes(&0x01020304050607));
+        assert_eq!(
+            vec![0, 1, 2, 3, 4, 5, 6, 7],
+            u64_to_bytes(&0x01020304050607)
+        );
     }
 }

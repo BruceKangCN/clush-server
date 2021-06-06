@@ -133,13 +133,21 @@ impl Task {
         Ok(())
     }
 
-
+    /// read a frame from the stream
     pub async fn read_frame(&mut self) -> Result<Option<ClushFrame>> {
         let mut buf = BytesMut::with_capacity(BUF_SIZE);
 
         let n = self.stream.read_buf(&mut buf).await?;
+
+        // if is keep-alive
         if n == 0 {
-            return Ok(Some(ClushFrame::new(MessageType::None, 0, 0, 0, BytesMut::from(""))));
+            return Ok(Some(ClushFrame::new(
+                MessageType::None,
+                0,
+                0,
+                0,
+                BytesMut::from(""),
+            )));
         }
 
         // length of msg_type + from_id + to_id + size
@@ -147,9 +155,12 @@ impl Task {
             panic!("incomplete package!")
         }
 
+        // convert numbers to bytes
         let from_id = u64_from_bytes(&buf[4..12]).unwrap();
         let to_id = u64_from_bytes(&buf[12..20]).unwrap();
         let size = u64_from_bytes(&buf[20..28]).unwrap();
+
+        // get the message type id, construct a frame according to it
         let mut frame = match u32_from_bytes(&buf[0..4]).unwrap() {
             0 => return Ok(None),
             _ => ClushFrame::new(
@@ -161,9 +172,11 @@ impl Task {
             ), // TODO: convert u32 to enum
         };
 
+        // read the last of stream and add to content
         loop {
             let n = self.stream.read_buf(&mut buf).await?;
             if n == 0 {
+                // check data integrity
                 if frame.content.len() as u64 != frame.size() {
                     panic!("data mismatch!");
                 }
@@ -175,11 +188,13 @@ impl Task {
         Ok(Some(frame))
     }
 
+    /// write a frame to the stream
     pub async fn write_frame(&mut self, frame: ClushFrame) -> Result<()> {
         self.stream.write(&frame.to_bytes()[..]).await.unwrap();
 
         Ok(())
     }
+
     // TODO: implement process
     /// process the frame according to the frame type
     async fn process_frame(&self, frame: &ClushFrame) -> Result<()> {
