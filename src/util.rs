@@ -6,9 +6,9 @@ pub enum MessageType {
 }
 
 /// convert a given slice to u32
-pub fn u32_from_bytes(bytes: &[u8]) -> Result<u32, &str> {
+pub fn u32_from_bytes(bytes: &[u8]) -> Result<u32, String> {
     if bytes.len() < 4 {
-        return Err("insufficient data!");
+        return Err("insufficient data!".to_string());
     }
     let mut number: u32 = 0;
     for i in 0..4 {
@@ -20,9 +20,9 @@ pub fn u32_from_bytes(bytes: &[u8]) -> Result<u32, &str> {
 }
 
 /// convert a given slice to u64
-pub fn u64_from_bytes(bytes: &[u8]) -> Result<u64, &str> {
+pub fn u64_from_bytes(bytes: &[u8]) -> Result<u64, String> {
     if bytes.len() < 8 {
-        return Err("insufficient data!");
+        return Err("insufficient data!".to_string());
     }
     let mut number: u64 = 0;
     for i in 0..8 {
@@ -31,6 +31,28 @@ pub fn u64_from_bytes(bytes: &[u8]) -> Result<u64, &str> {
     }
 
     Ok(number)
+}
+
+pub fn u32_to_bytes(number: &u32) -> Vec<u8> {
+    let mut bytes = vec![0u8; 0];
+    let mut n = *number;
+    for _ in 0..4 {
+        bytes.insert(0, (n & 0xff) as u8);
+        n >>= BITS_OF_BYTE;
+    }
+
+    bytes
+}
+
+pub fn u64_to_bytes(number: &u64) -> Vec<u8> {
+    let mut bytes = vec![0u8; 0];
+    let mut n = *number;
+    for _ in 0..8 {
+        bytes.insert(0, (n & 0xff) as u8);
+        n >>= BITS_OF_BYTE;
+    }
+
+    bytes
 }
 
 #[cfg(test)]
@@ -47,5 +69,15 @@ mod tests {
     fn u64_from_bytes_test() {
         let bytes = [0, 1, 2, 3, 4, 5, 6, 7, 8];
         assert_eq!(0x01020304050607, u64_from_bytes(&bytes[..]).unwrap());
+    }
+
+    #[test]
+    fn u32_to_bytes_test() {
+        assert_eq!(vec![0, 1, 2, 3], u32_to_bytes(&0x010203));
+    }
+
+    #[test]
+    fn u64_to_bytes_test() {
+        assert_eq!(vec![0, 1, 2, 3, 4, 5, 6, 7], u64_to_bytes(&0x01020304050607));
     }
 }

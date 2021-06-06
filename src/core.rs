@@ -1,4 +1,4 @@
-use crate::util::{u32_from_bytes, u64_from_bytes, MessageType};
+use crate::util::*;
 use bytes::{Bytes, BytesMut};
 use tokio::io::{AsyncReadExt, AsyncWriteExt, Result};
 use tokio::net::{TcpListener, TcpStream};
@@ -98,18 +98,19 @@ impl ClushFrame {
         Bytes::from(self.content.clone())
     }
 
-    // TODO: implement read, write, process
-    // pub async fn read_frame(stream: &mut TcpStream) -> ClushFrame {
+    /// convert ClushFrame to Bytes
+    pub fn to_bytes(&self) -> Bytes {
+        let mut bytes_mut = BytesMut::with_capacity(0);
+        match self.msg_type {
+            _ => bytes_mut.extend_from_slice(&u32_to_bytes(&0)[..]),
+        }
+        bytes_mut.extend_from_slice(&u64_to_bytes(&self.from_id)[..]);
+        bytes_mut.extend_from_slice(&u64_to_bytes(&self.to_id)[..]);
+        bytes_mut.extend_from_slice(&u64_to_bytes(&self.size)[..]);
+        bytes_mut.extend_from_slice(&self.content[..]);
 
-    // }
-
-    // pub async fn write_frame(stream: &mut TcpStream) -> Result<()> {
-
-    // }
-
-    // pub async fn process(&mut self) -> Result<()> {
-    //     Ok(())
-    // }
+        bytes_mut.freeze()
+    }
 }
 
 /// a task to process the given TcpStream
@@ -125,11 +126,20 @@ impl Task {
 
     /// process the stream
     async fn process(&mut self) -> Result<()> {
+        while let Some(frame) = self.read_frame().await? {
+            self.process_frame(&frame).await.unwrap();
+        }
+
+        Ok(())
+    }
+
+
+    pub async fn read_frame(&mut self) -> Result<Option<ClushFrame>> {
         let mut buf = BytesMut::with_capacity(BUF_SIZE);
 
         let n = self.stream.read_buf(&mut buf).await?;
         if n == 0 {
-            return Ok(());
+            return Ok(Some(ClushFrame::new(MessageType::None, 0, 0, 0, BytesMut::from(""))));
         }
 
         // length of msg_type + from_id + to_id + size
@@ -140,7 +150,8 @@ impl Task {
         let from_id = u64_from_bytes(&buf[4..12]).unwrap();
         let to_id = u64_from_bytes(&buf[12..20]).unwrap();
         let size = u64_from_bytes(&buf[20..28]).unwrap();
-        let mut frame = match u32_from_bytes(&buf[0..4]) {
+        let mut frame = match u32_from_bytes(&buf[0..4]).unwrap() {
+            0 => return Ok(None),
             _ => ClushFrame::new(
                 MessageType::None,
                 from_id,
@@ -160,18 +171,20 @@ impl Task {
             }
             frame.append(&buf[..n]);
         }
-        self.parse(&frame).await;
+
+        Ok(Some(frame))
+    }
+
+    pub async fn write_frame(&mut self, frame: ClushFrame) -> Result<()> {
+        self.stream.write(&frame.to_bytes()[..]).await.unwrap();
 
         Ok(())
     }
-
-    // TODO: implement get_frame
-    // process(){while let frame = get_frame() {frame.process()}}
-
-    // TODO: parse to ClushFrame
-    /// parse the content and convert it to ClushFrame
-    async fn parse(&self, frame: &ClushFrame) {
+    // TODO: implement process
+    /// process the frame according to the frame type
+    async fn process_frame(&self, frame: &ClushFrame) -> Result<()> {
         // println!("{}", str::from_utf8(content).unwrap());
+        Ok(())
     }
 }
 
