@@ -6,8 +6,9 @@ pub enum MessageType {
     UserMessage,  // 1
     GroupMessage, // 2
     ImageMessage, // 3
-                  // VoiceMessage,   // 4
-                  // FileMessage,    // 5
+    VideoMessage, // 4
+    VoiceMessage, // 5
+    FileMessage,  // 6
 }
 
 /// convert a given slice to u32

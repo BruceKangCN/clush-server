@@ -173,6 +173,9 @@ impl Task {
             1 => frame.set_msg_type(MessageType::UserMessage),
             2 => frame.set_msg_type(MessageType::GroupMessage),
             3 => frame.set_msg_type(MessageType::ImageMessage),
+            4 => frame.set_msg_type(MessageType::VideoMessage),
+            5 => frame.set_msg_type(MessageType::VoiceMessage),
+            6 => frame.set_msg_type(MessageType::FileMessage),
             _ => return Ok(None),
         };
 
