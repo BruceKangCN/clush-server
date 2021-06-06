@@ -81,6 +81,13 @@ impl ClushFrame {
         }
     }
 
+    /// set the message type of ClushFrame
+    pub fn set_msg_type(&mut self, msg_type: MessageType) -> &mut ClushFrame {
+        self.msg_type = msg_type;
+
+        self
+    }
+
     /// append the given content to ClushFrame's content
     pub fn append(&mut self, content: &[u8]) -> &mut ClushFrame {
         self.content.extend_from_slice(&content);
@@ -141,13 +148,7 @@ impl Task {
 
         // if is keep-alive
         if n == 0 {
-            return Ok(Some(ClushFrame::new(
-                MessageType::None,
-                0,
-                0,
-                0,
-                BytesMut::from(""),
-            )));
+            return Ok(None);
         }
 
         // length of msg_type + from_id + to_id + size
@@ -159,17 +160,20 @@ impl Task {
         let from_id = u64_from_bytes(&buf[4..12]).unwrap();
         let to_id = u64_from_bytes(&buf[12..20]).unwrap();
         let size = u64_from_bytes(&buf[20..28]).unwrap();
-
-        // get the message type id, construct a frame according to it
-        let mut frame = match u32_from_bytes(&buf[0..4]).unwrap() {
-            0 => return Ok(None),
-            _ => ClushFrame::new(
-                MessageType::None,
-                from_id,
-                to_id,
-                size,
-                BytesMut::from(&buf[28..n]),
-            ), // TODO: convert u32 to enum
+        // construct a frame of undefined type
+        let mut frame = ClushFrame::new(
+            MessageType::Undefined,
+            from_id,
+            to_id,
+            size,
+            BytesMut::from(&buf[28..n]),
+        );
+        // get the message type id, set frame message type according to it
+        match u32_from_bytes(&buf[0..4]).unwrap() {
+            1 => frame.set_msg_type(MessageType::UserMessage),
+            2 => frame.set_msg_type(MessageType::GroupMessage),
+            3 => frame.set_msg_type(MessageType::ImageMessage),
+            _ => return Ok(None),
         };
 
         // read the last of stream and add to content
@@ -177,7 +181,7 @@ impl Task {
             let n = self.stream.read_buf(&mut buf).await?;
             if n == 0 {
                 // check data integrity
-                if frame.content.len() as u64 != frame.size() {
+                if frame.content().len() as u64 != frame.size() {
                     panic!("data mismatch!");
                 }
                 break;

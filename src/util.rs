@@ -2,7 +2,12 @@ const BITS_OF_BYTE: usize = 8;
 
 /// clush message type
 pub enum MessageType {
-    None,
+    Undefined,    // 0
+    UserMessage,  // 1
+    GroupMessage, // 2
+    ImageMessage, // 3
+                  // VoiceMessage,   // 4
+                  // FileMessage,    // 5
 }
 
 /// convert a given slice to u32
