@@ -2,6 +2,7 @@ use crate::core::config::*;
 use crate::util::*;
 use bytes::{Bytes, BytesMut};
 use rbatis::rbatis::Rbatis;
+use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, Result};
 use tokio::net::{TcpListener, TcpStream};
 
@@ -20,25 +21,14 @@ static BUF_SIZE: usize = 4096;
 /// ```
 pub struct ClushServer {
     listener: TcpListener,
-    db: Rbatis,
+    db: Arc<Rbatis>,
 }
 
 impl ClushServer {
     /// create a clush server with the given TCP listener
     pub fn new(listener: TcpListener, db: Rbatis) -> ClushServer {
+        let db = Arc::new(db);
         ClushServer { listener, db }
-    }
-
-    /// init a clush server with the default configuration
-    pub async fn init() -> Result<ClushServer> {
-        let listener = TcpListener::bind("0.0.0.0:9527").await?;
-        let _ = fast_log::init_log("log/rbatis.log", 10000usize, log::Level::Warn, None, false);
-        let db = Rbatis::new();
-        db.link("postgres://root:root@192.168.2.1/test")
-            .await
-            .unwrap();
-
-        Ok(ClushServer::new(listener, db))
     }
 
     /// init a clush server with the given configuration
@@ -69,8 +59,10 @@ impl ClushServer {
     pub async fn start(&self) -> Result<()> {
         loop {
             let (stream, _addr) = self.listener.accept().await?;
+            let db = self.db.clone();
+
             tokio::spawn(async move {
-                let mut task = Task::new(stream);
+                let mut task = Task::new(stream, db);
                 task.process().await
             });
         }
@@ -143,12 +135,13 @@ impl ClushFrame {
 /// a task to process the given TcpStream
 struct Task {
     stream: TcpStream,
+    db: Arc<Rbatis>,
 }
 
 impl Task {
     /// create a task to process the given stream
-    fn new(stream: TcpStream) -> Task {
-        Task { stream }
+    fn new(stream: TcpStream, db: Arc<Rbatis>) -> Task {
+        Task { stream, db }
     }
 
     /// process the stream
