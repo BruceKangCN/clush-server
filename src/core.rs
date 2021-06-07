@@ -1,5 +1,6 @@
 use crate::util::*;
 use bytes::{Bytes, BytesMut};
+use rbatis::rbatis::Rbatis;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, Result};
 use tokio::net::{TcpListener, TcpStream};
 
@@ -10,7 +11,7 @@ static BUF_SIZE: usize = 4096;
 // TODO: add integrity test for ClushServer
 /// a clush server
 ///
-/// # Examples
+/// # Example
 ///
 /// ```
 /// let server = ClushServer::init().await?;
@@ -18,31 +19,45 @@ static BUF_SIZE: usize = 4096;
 /// ```
 pub struct ClushServer {
     listener: TcpListener,
+    db: Rbatis,
 }
 
 impl ClushServer {
     /// create a clush server with the given TCP listener
-    pub fn new(listener: TcpListener) -> ClushServer {
-        ClushServer { listener }
+    pub fn new(listener: TcpListener, db: Rbatis) -> ClushServer {
+        ClushServer { listener, db }
     }
 
     /// init a clush server with the default configuration
     pub async fn init() -> Result<ClushServer> {
         let listener = TcpListener::bind("0.0.0.0:9527").await?;
-        Ok(ClushServer::new(listener))
+        let _ = fast_log::init_log("log/rbatis.log", 10000usize, log::Level::Warn, None, false);
+        let db = Rbatis::new();
+        db.link("postgres://root:root@192.168.2.1/test")
+            .await
+            .unwrap();
+
+        Ok(ClushServer::new(listener, db))
     }
 
-    /// init a clush server with the given address
+    /// init a clush server with the given addresses
     ///
-    /// # Examples
+    /// # Example
     ///
     /// ```
-    /// let server = ClushServer::init_with_addr("127.0.0.1:9527").await?;
+    /// let server = ClushServer::init_with_addr(
+    ///     "127.0.0.1:9527",
+    ///     "postgres://root:root@192.168.2.1/test"
+    /// ).await?;
     /// server.start().await
     /// ```
-    pub async fn init_with_addr(addr: &str) -> Result<ClushServer> {
+    pub async fn init_with_addr(addr: &str, uri: &str) -> Result<ClushServer> {
         let listener = TcpListener::bind(addr).await?;
-        Ok(ClushServer::new(listener))
+        let _ = fast_log::init_log("log/rbatis.log", 10000usize, log::Level::Warn, None, false);
+        let db = Rbatis::new();
+        db.link(uri).await.unwrap();
+
+        Ok(ClushServer::new(listener, db))
     }
 
     /// start the event loop
@@ -59,11 +74,11 @@ impl ClushServer {
 
 /// a frame used to communicate with clush client and server
 pub struct ClushFrame {
-    msg_type: MessageType,
-    from_id: u64,
-    to_id: u64,
-    size: u64,
-    content: BytesMut,
+    pub msg_type: MessageType,
+    pub from_id: u64,
+    pub to_id: u64,
+    pub size: u64,
+    pub content: BytesMut,
 }
 
 impl ClushFrame {
@@ -97,18 +112,8 @@ impl ClushFrame {
         self
     }
 
-    /// get content part size
-    pub fn size(&self) -> u64 {
-        self.size
-    }
-
     pub fn update_size(&mut self) {
         self.size = self.content.len() as u64;
-    }
-
-    /// get content part of the ClushFrame
-    pub fn content(&self) -> Bytes {
-        Bytes::from(self.content.clone())
     }
 
     /// convert ClushFrame to Bytes
@@ -193,7 +198,7 @@ impl Task {
             let n = self.stream.read_buf(&mut buf).await?;
             if n == 0 {
                 // check data integrity
-                if frame.content().len() as u64 != frame.size() {
+                if frame.content.len() as u64 != frame.size {
                     panic!("data mismatch!");
                 }
                 break;
@@ -235,8 +240,8 @@ mod tests {
         );
         assert_eq!(0, frame.from_id);
         assert_eq!(0, frame.to_id);
-        assert_eq!(5, frame.size());
-        assert_eq!(BytesMut::from(&"hello"[..]), frame.content());
+        assert_eq!(5, frame.size);
+        assert_eq!(BytesMut::from(&"hello"[..]), frame.content);
         assert_eq!(
             Bytes::from(
                 &[
@@ -259,6 +264,6 @@ mod tests {
             BytesMut::from(&"hello"[..]),
         );
         frame.update_size();
-        assert_eq!(5, frame.size());
+        assert_eq!(5, frame.size);
     }
 }
