@@ -1,3 +1,4 @@
+use crate::core::config::*;
 use crate::util::*;
 use bytes::{Bytes, BytesMut};
 use rbatis::rbatis::Rbatis;
@@ -40,22 +41,26 @@ impl ClushServer {
         Ok(ClushServer::new(listener, db))
     }
 
-    /// init a clush server with the given addresses
+    /// init a clush server with the given configuration
     ///
     /// # Example
     ///
     /// ```
-    /// let server = ClushServer::init_with_addr(
-    ///     "127.0.0.1:9527",
-    ///     "postgres://root:root@192.168.2.1/test"
-    /// ).await?;
+    /// let config = ClushConfig::from_json("config/clush.json").await;
+    /// let server = ClushServer::init_with_config(config).await?;
     /// server.start().await
     /// ```
-    pub async fn init_with_addr(addr: &str, uri: &str) -> Result<ClushServer> {
-        let listener = TcpListener::bind(addr).await?;
-        let _ = fast_log::init_log("log/rbatis.log", 10000usize, log::Level::Warn, None, false);
+    pub async fn init_with_config(config: ClushConfig) -> Result<ClushServer> {
+        let listener = TcpListener::bind(&config.server_config.url).await?;
+        let _ = fast_log::init_log(
+            &config.rbatis_config.log_path,
+            config.rbatis_config.log_limit,
+            config.rbatis_config.log_level(),
+            None,
+            config.rbatis_config.debug_mode,
+        );
         let db = Rbatis::new();
-        db.link(uri).await.unwrap();
+        db.link(&config.rbatis_config.db_url).await.unwrap();
 
         Ok(ClushServer::new(listener, db))
     }
@@ -221,6 +226,51 @@ impl Task {
     async fn process_frame(&self, frame: &ClushFrame) -> Result<()> {
         match frame.msg_type {
             _ => panic!("unimplemented!"),
+        }
+    }
+}
+
+pub mod config {
+    use serde::{Deserialize, Serialize};
+    use std::str::FromStr;
+    use tokio::fs::File;
+    use tokio::io::AsyncReadExt;
+
+    /// all configuration
+    #[derive(Serialize, Deserialize)]
+    pub struct ClushConfig {
+        pub server_config: ServerConfig,
+        pub rbatis_config: RbatisConfig,
+    }
+
+    impl ClushConfig {
+        pub async fn from_json(path: &str) -> ClushConfig {
+            let mut file = File::open(path).await.unwrap();
+            let mut content = vec![];
+            file.read_to_end(&mut content).await.unwrap();
+            let obj: ClushConfig = serde_json::from_slice(&content).unwrap();
+
+            obj
+        }
+    }
+
+    #[derive(Serialize, Deserialize)]
+    pub struct ServerConfig {
+        pub url: String,
+    }
+
+    #[derive(Serialize, Deserialize)]
+    pub struct RbatisConfig {
+        pub db_url: String,
+        pub log_path: String,
+        pub log_level: String,
+        pub log_limit: usize,
+        pub debug_mode: bool,
+    }
+
+    impl RbatisConfig {
+        pub fn log_level(&self) -> log::Level {
+            log::Level::from_str(&self.log_level).unwrap()
         }
     }
 }

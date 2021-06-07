@@ -14,22 +14,13 @@ pub mod util;
 
 mod core;
 
+use crate::core::config::ClushConfig;
 use crate::core::ClushServer;
-use std::env;
 use tokio::io::Result;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let server: ClushServer;
-    if env::args().len() > 1 {
-        // TODO: read configuration from file
-        server = ClushServer::init_with_addr(
-            &env::args().nth(1).unwrap()[..],
-            &env::args().nth(2).unwrap()[..],
-        )
-        .await?;
-    } else {
-        server = ClushServer::init().await?;
-    }
+    let config = ClushConfig::from_json("config/clush.json").await;
+    let server = ClushServer::init_with_config(config).await?;
     server.start().await
 }
