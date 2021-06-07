@@ -28,6 +28,7 @@ impl ClushServer {
     /// create a clush server with the given TCP listener
     pub fn new(listener: TcpListener, db: Rbatis) -> ClushServer {
         let db = Arc::new(db);
+
         ClushServer { listener, db }
     }
 
@@ -250,6 +251,9 @@ pub mod config {
     #[derive(Serialize, Deserialize)]
     pub struct ServerConfig {
         pub url: String,
+        pub enable_tls: bool,
+        pub key_path: String,
+        pub cert_path: String,
     }
 
     #[derive(Serialize, Deserialize)]
