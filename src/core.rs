@@ -3,6 +3,7 @@ use bytes::{Bytes, BytesMut};
 use tokio::io::{AsyncReadExt, AsyncWriteExt, Result};
 use tokio::net::{TcpListener, TcpStream};
 
+/// buffer size
 static BUF_SIZE: usize = 4096;
 
 // TODO: add tokio_rustls TLS acceptor
@@ -36,10 +37,10 @@ impl ClushServer {
     /// # Examples
     ///
     /// ```
-    /// let server = ClushServer::init_with_addr(env::args().nth(1).unwrap()).await?;
+    /// let server = ClushServer::init_with_addr("127.0.0.1:9527").await?;
     /// server.start().await
     /// ```
-    pub async fn init_with_addr(addr: String) -> Result<ClushServer> {
+    pub async fn init_with_addr(addr: &str) -> Result<ClushServer> {
         let listener = TcpListener::bind(addr).await?;
         Ok(ClushServer::new(listener))
     }

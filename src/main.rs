@@ -22,7 +22,8 @@ use tokio::io::Result;
 async fn main() -> Result<()> {
     let server: ClushServer;
     if env::args().len() > 1 {
-        server = ClushServer::init_with_addr(env::args().nth(1).unwrap()).await?;
+        // TODO: read configuration from file
+        server = ClushServer::init_with_addr(&env::args().nth(1).unwrap()[..]).await?;
     } else {
         server = ClushServer::init().await?;
     }

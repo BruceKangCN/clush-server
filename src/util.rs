@@ -10,9 +10,9 @@ pub enum MessageType {
 }
 
 /// convert a given slice to u32
-pub fn u32_from_bytes(bytes: &[u8]) -> Result<u32, String> {
+pub fn u32_from_bytes(bytes: &[u8]) -> Result<u32, &str> {
     if bytes.len() < 4 {
-        return Err("insufficient data!".to_string());
+        return Err("insufficient data!");
     }
     let mut number: u32 = 0;
     for i in 0..4 {
@@ -24,9 +24,9 @@ pub fn u32_from_bytes(bytes: &[u8]) -> Result<u32, String> {
 }
 
 /// convert a given slice to u64
-pub fn u64_from_bytes(bytes: &[u8]) -> Result<u64, String> {
+pub fn u64_from_bytes(bytes: &[u8]) -> Result<u64, &str> {
     if bytes.len() < 8 {
-        return Err("insufficient data!".to_string());
+        return Err("insufficient data!");
     }
     let mut number: u64 = 0;
     for i in 0..8 {
