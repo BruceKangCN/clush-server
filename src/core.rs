@@ -232,6 +232,7 @@ pub mod config {
 
     /// all configuration
     #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct ClushConfig {
         pub server_config: ServerConfig,
         pub rbatis_config: RbatisConfig,
@@ -249,6 +250,7 @@ pub mod config {
     }
 
     #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct ServerConfig {
         pub url: String,
         pub enable_tls: bool,
@@ -257,6 +259,7 @@ pub mod config {
     }
 
     #[derive(Serialize, Deserialize)]
+    #[serde(rename_all = "camelCase")]
     pub struct RbatisConfig {
         pub db_url: String,
         pub log_path: String,

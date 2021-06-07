@@ -30,18 +30,18 @@ the  server needs a configuration file in `config/clush.json` to start
 here is an example  
 ```json
 {
-    "server_config": {
+    "serverConfig": {
         "url": "0.0.0.0:9527",
-        "enable_tls": false,
-        "key_path": "config/key.pem",
-        "cert_path": "config/certificate.pem"
+        "enableTls": false,
+        "keyPath": "config/key.pem",
+        "certPath": "config/certificate.pem"
     },
-    "rbatis_config": {
-        "db_url": "postgres://root:root@example.com/test",
-        "log_path": "log/rbatis.log",
-        "log_level": "Warn",
-        "log_limit": 10000,
-        "debug_mode": false
+    "rbatisConfig": {
+        "dbUrl": "postgres://root:root@example.com/test",
+        "logPath": "log/rbatis.log",
+        "logLevel": "Warn",
+        "logLimit": 10000,
+        "debugMode": false
     }
 }
 ```
