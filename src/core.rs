@@ -118,15 +118,15 @@ impl ClushFrame {
     pub fn to_bytes(&self) -> Bytes {
         let mut bytes_mut = BytesMut::with_capacity(0);
         match self.msg_type {
-            MessageType::UserMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&1)[..]),
-            MessageType::GroupMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&2)[..]),
-            MessageType::UserFileMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&3)[..]),
-            MessageType::GroupFileMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&4)[..]),
-            _ => bytes_mut.extend_from_slice(&u32_to_bytes(&0)[..]),
+            MessageType::UserMessage => bytes_mut.extend_from_slice(&u32_to_bytes(1)[..]),
+            MessageType::GroupMessage => bytes_mut.extend_from_slice(&u32_to_bytes(2)[..]),
+            MessageType::UserFileMessage => bytes_mut.extend_from_slice(&u32_to_bytes(3)[..]),
+            MessageType::GroupFileMessage => bytes_mut.extend_from_slice(&u32_to_bytes(4)[..]),
+            _ => bytes_mut.extend_from_slice(&u32_to_bytes(0)[..]),
         }
-        bytes_mut.extend_from_slice(&u64_to_bytes(&self.from_id)[..]);
-        bytes_mut.extend_from_slice(&u64_to_bytes(&self.to_id)[..]);
-        bytes_mut.extend_from_slice(&u64_to_bytes(&self.size)[..]);
+        bytes_mut.extend_from_slice(&u64_to_bytes(self.from_id)[..]);
+        bytes_mut.extend_from_slice(&u64_to_bytes(self.to_id)[..]);
+        bytes_mut.extend_from_slice(&u64_to_bytes(self.size)[..]);
         bytes_mut.extend_from_slice(&self.content[..]);
 
         bytes_mut.freeze()
@@ -163,7 +163,13 @@ impl Task {
 
         // if is keep-alive
         if n == 0 {
-            return Ok(None);
+            return Ok(Some(ClushFrame::new(
+                MessageType::Undefined,
+                0,
+                0,
+                0,
+                BytesMut::with_capacity(0),
+            )));
         }
 
         // length of msg_type + from_id + to_id + size
@@ -219,6 +225,7 @@ impl Task {
     /// process the frame according to the frame type
     async fn process_frame(&self, frame: &ClushFrame) -> Result<()> {
         match frame.msg_type {
+            MessageType::Undefined => Ok(()),
             _ => panic!("unimplemented!"),
         }
     }
