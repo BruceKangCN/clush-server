@@ -115,10 +115,8 @@ impl ClushFrame {
         match self.msg_type {
             MessageType::UserMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&1)[..]),
             MessageType::GroupMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&2)[..]),
-            MessageType::ImageMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&3)[..]),
-            MessageType::VideoMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&4)[..]),
-            MessageType::VoiceMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&5)[..]),
-            MessageType::FileMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&6)[..]),
+            MessageType::UserFileMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&3)[..]),
+            MessageType::GroupFileMessage => bytes_mut.extend_from_slice(&u32_to_bytes(&4)[..]),
             _ => bytes_mut.extend_from_slice(&u32_to_bytes(&0)[..]),
         }
         bytes_mut.extend_from_slice(&u64_to_bytes(&self.from_id)[..]);
@@ -146,6 +144,7 @@ impl Task {
         while let Some(frame) = self.read_frame().await? {
             self.process_frame(&frame).await?;
         }
+        // TODO: offline after the task is done
 
         Ok(())
     }
@@ -182,10 +181,8 @@ impl Task {
         match u32_from_bytes(&buf[0..4]).unwrap() {
             1 => frame.set_msg_type(MessageType::UserMessage),
             2 => frame.set_msg_type(MessageType::GroupMessage),
-            3 => frame.set_msg_type(MessageType::ImageMessage),
-            4 => frame.set_msg_type(MessageType::VideoMessage),
-            5 => frame.set_msg_type(MessageType::VoiceMessage),
-            6 => frame.set_msg_type(MessageType::FileMessage),
+            3 => frame.set_msg_type(MessageType::UserFileMessage),
+            4 => frame.set_msg_type(MessageType::GroupFileMessage),
             _ => return Ok(None),
         };
 
