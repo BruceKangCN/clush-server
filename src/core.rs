@@ -6,6 +6,7 @@ use tokio::net::{TcpListener, TcpStream};
 static BUF_SIZE: usize = 4096;
 
 // TODO: add tokio_rustls TLS acceptor
+// TODO: add integrity test for ClushServer
 /// a clush server
 ///
 /// # Examples
@@ -150,7 +151,7 @@ impl Task {
     }
 
     /// read a frame from the stream
-    pub async fn read_frame(&mut self) -> Result<Option<ClushFrame>> {
+    async fn read_frame(&mut self) -> Result<Option<ClushFrame>> {
         let mut buf = BytesMut::with_capacity(BUF_SIZE);
 
         let n = self.stream.read_buf(&mut buf).await?;
@@ -203,7 +204,7 @@ impl Task {
     }
 
     /// write a frame to the stream
-    pub async fn write_frame(&mut self, frame: ClushFrame) -> Result<()> {
+    async fn write_frame(&mut self, frame: ClushFrame) -> Result<()> {
         self.stream.write(&frame.to_bytes()[..]).await?;
 
         Ok(())
