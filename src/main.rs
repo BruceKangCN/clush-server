@@ -8,13 +8,13 @@
 #[macro_use]
 extern crate rbatis;
 
+pub mod config;
 pub mod entity;
-pub mod service;
 pub mod util;
 
 mod core;
 
-use crate::core::config::ClushConfig;
+use crate::config::ClushConfig;
 use crate::core::ClushServer;
 use tokio::io::Result;
 
