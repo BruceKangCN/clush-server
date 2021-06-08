@@ -15,6 +15,7 @@ static BUF_SIZE: usize = 4096;
 
 // TODO: add tokio_rustls TLS acceptor
 // TODO: add integrity test for ClushServer
+// TODO: add group_map to store online member of a group
 /// a clush server
 ///
 /// # Example
@@ -75,7 +76,7 @@ impl ClushServer {
         // spawn a task to read message
         tokio::spawn(async move {
             while let Some(frame) = rx.recv().await {
-                // TODO: message handling
+                // TODO: message handling using MessageHandler { rx, map }
             }
         });
 
@@ -102,11 +103,6 @@ impl ClushServer {
                     // then start to process the rest
                     if let Some(mut task) = map.get_mut(&uid) {
                         task.process().await.unwrap();
-
-                        // offline after the task is done
-                        let mut user = task.db.fetch_by_id::<User>("", &uid).await.unwrap();
-                        user.online = false;
-                        task.db.save::<User>("", &user).await.unwrap();
                     }
 
                     // remove task when it is done
@@ -287,12 +283,9 @@ impl Task {
                     let uid = first_frame.from_id;
                     let password = first_frame.content;
                     // get user info from database
-                    let mut user = self.db.fetch_by_id::<User>("", &uid).await.unwrap();
+                    let user = self.db.fetch_by_id::<User>("", &uid).await.unwrap();
                     // check password
                     if user.password == password {
-                        // if match update user info
-                        user.online = true;
-                        self.db.save::<User>("", &user).await.unwrap();
                         // TODO: fetch messages
 
                         Some(uid)
