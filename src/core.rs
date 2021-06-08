@@ -357,17 +357,11 @@ mod tests {
 
     #[test]
     fn clush_frame_test() {
-        let frame = ClushFrame::new(
-            MessageType::UserMessage,
-            0,
-            0,
-            5,
-            BytesMut::from(&"hello"[..]),
-        );
+        let frame = ClushFrame::new(MessageType::UserMessage, 0, 0, 5, BytesMut::from("hello"));
         assert_eq!(0, frame.from_id);
         assert_eq!(0, frame.to_id);
         assert_eq!(5, frame.size);
-        assert_eq!(BytesMut::from(&"hello"[..]), frame.content);
+        assert_eq!(BytesMut::from("hello"), frame.content);
         assert_eq!(
             Bytes::from(
                 &[
@@ -382,13 +376,7 @@ mod tests {
 
     #[test]
     fn update_size_test() {
-        let mut frame = ClushFrame::new(
-            MessageType::UserMessage,
-            0,
-            0,
-            0,
-            BytesMut::from(&"hello"[..]),
-        );
+        let mut frame = ClushFrame::new(MessageType::UserMessage, 0, 0, 0, BytesMut::from("hello"));
         frame.update_size();
         assert_eq!(5, frame.size);
     }
