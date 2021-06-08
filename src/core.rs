@@ -260,13 +260,14 @@ impl Task {
                         Some(uid)
                     } else {
                         // if mismatch, send back an error frame
-                        let err_frame = ClushFrame::new(
+                        let mut err_frame = ClushFrame::new(
                             MessageType::UserMessage,
                             0,
                             uid,
-                            16,
+                            0,
                             BytesMut::from("invalid password"),
                         );
+                        err_frame.update_size();
                         self.write_frame(err_frame).await.unwrap();
 
                         None
