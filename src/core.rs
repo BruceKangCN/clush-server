@@ -32,6 +32,7 @@ pub struct ClushServer {
 impl ClushServer {
     /// create a clush server with the given TCP listener
     pub fn new(listener: TcpListener, db: Rbatis) -> ClushServer {
+        // wrap in Arc for using in multi-threading context
         let db = Arc::new(db);
         let map = Arc::new(DashMap::new());
 
@@ -48,14 +49,17 @@ impl ClushServer {
     /// server.start().await
     /// ```
     pub async fn init_with_config(config: ClushConfig) -> Result<ClushServer> {
+        // create listener
         let listener = TcpListener::bind(&config.server_config.url).await?;
-        let _ = fast_log::init_log(
+        // create logger
+        fast_log::init_log(
             &config.rbatis_config.log_path,
             config.rbatis_config.log_limit,
             config.rbatis_config.log_level(),
             None,
             config.rbatis_config.debug_mode,
-        );
+        ).unwrap();
+        // create database connection pool
         let db = Rbatis::new();
         db.link(&config.rbatis_config.db_url).await.unwrap();
 
@@ -65,10 +69,13 @@ impl ClushServer {
     /// start the event loop
     pub async fn start(&self) -> Result<()> {
         loop {
+            // get stream from listener
             let (stream, _addr) = self.listener.accept().await?;
+            // clone Arc of db, map to use in new task
             let db = self.db.clone();
             let map = self.map.clone();
 
+            // spawn a new task
             tokio::spawn(async move {
                 // create a new task to deal with the stream
                 let mut task = Task::new(stream, db);
@@ -136,13 +143,17 @@ impl ClushFrame {
         self
     }
 
+    /// update the size of frame
     pub fn update_size(&mut self) {
         self.size = self.content.len() as u64;
     }
 
     /// convert ClushFrame to Bytes
+    /// convenience for writing ClushFrame into byte stream
     pub fn to_bytes(&self) -> Bytes {
         let mut bytes_mut = BytesMut::with_capacity(0);
+
+        // convert MessageType to [u8; 4]
         match self.msg_type {
             MessageType::UserMessage => bytes_mut.extend_from_slice(&u32_to_bytes(1)[..]),
             MessageType::GroupMessage => bytes_mut.extend_from_slice(&u32_to_bytes(2)[..]),
@@ -150,6 +161,7 @@ impl ClushFrame {
             MessageType::GroupFileMessage => bytes_mut.extend_from_slice(&u32_to_bytes(4)[..]),
             _ => bytes_mut.extend_from_slice(&u32_to_bytes(0)[..]),
         }
+
         bytes_mut.extend_from_slice(&u64_to_bytes(self.from_id)[..]);
         bytes_mut.extend_from_slice(&u64_to_bytes(self.to_id)[..]);
         bytes_mut.extend_from_slice(&u64_to_bytes(self.size)[..]);
@@ -184,6 +196,7 @@ impl Task {
     async fn read_frame(&mut self) -> Result<Option<ClushFrame>> {
         let mut buf = BytesMut::with_capacity(BUF_SIZE);
 
+        // get the amount of bytes read
         let n = self.stream.read_buf(&mut buf).await?;
 
         // if is keep-alive
@@ -265,6 +278,7 @@ impl Task {
                         // if match update user info
                         user.online = true;
                         self.db.save::<User>("", &user).await.unwrap();
+                        // TODO: fetch messages
 
                         Some(uid)
                     } else {
