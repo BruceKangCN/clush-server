@@ -72,14 +72,24 @@ impl ClushServer {
             tokio::spawn(async move {
                 // create a new task to deal with the stream
                 let mut task = Task::new(stream, db);
+
                 // first login to server
                 if let Some(uid) = task.process_login().await {
                     // store task to map if login success
                     map.insert(uid, task);
+
                     // then start to process the rest
                     if let Some(mut task) = map.get_mut(&uid) {
                         task.process().await.unwrap();
+
+                        // offline after the task is done
+                        let mut user = task.db.fetch_by_id::<User>("", &uid).await.unwrap();
+                        user.online = false;
+                        task.db.save::<User>("", &user).await.unwrap();
                     }
+
+                    // remove task when it is done
+                    map.remove(&uid);
                 }
             });
         }
@@ -166,7 +176,6 @@ impl Task {
         while let Some(frame) = self.read_frame().await? {
             self.process_frame(&frame).await?;
         }
-        // TODO: offline after the task is done
 
         Ok(())
     }

@@ -48,6 +48,10 @@ here is an example
 
 ## Credits
 
+### Special Thanks
+
+* @rekey
+
 ### MIT
 
 * tokio
