@@ -8,13 +8,13 @@ use rbatis::rbatis::Rbatis;
 use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, Result};
 use tokio::net::{TcpListener, TcpStream};
+use tokio::sync::mpsc;
 
 /// buffer size
 static BUF_SIZE: usize = 4096;
 
 // TODO: add tokio_rustls TLS acceptor
 // TODO: add integrity test for ClushServer
-// TODO: add tokio::sync::mpsc for message passing
 /// a clush server
 ///
 /// # Example
@@ -58,7 +58,8 @@ impl ClushServer {
             config.rbatis_config.log_level(),
             None,
             config.rbatis_config.debug_mode,
-        ).unwrap();
+        )
+        .unwrap();
         // create database connection pool
         let db = Rbatis::new();
         db.link(&config.rbatis_config.db_url).await.unwrap();
@@ -68,17 +69,30 @@ impl ClushServer {
 
     /// start the event loop
     pub async fn start(&self) -> Result<()> {
+        // create a channel to handle message
+        let (tx, mut rx) = mpsc::channel::<ClushFrame>(1024);
+
+        // spawn a task to read message
+        tokio::spawn(async move {
+            while let Some(frame) = rx.recv().await {
+                // TODO: message handling
+            }
+        });
+
+        // main event loop
         loop {
             // get stream from listener
             let (stream, _addr) = self.listener.accept().await?;
             // clone Arc of db, map to use in new task
             let db = self.db.clone();
             let map = self.map.clone();
+            // clone sender to use in task
+            let tx = tx.clone();
 
             // spawn a new task
             tokio::spawn(async move {
                 // create a new task to deal with the stream
-                let mut task = Task::new(stream, db);
+                let mut task = Task::new(stream, db, tx);
 
                 // first login to server
                 if let Some(uid) = task.process_login().await {
@@ -175,12 +189,13 @@ impl ClushFrame {
 struct Task {
     stream: TcpStream,
     db: Arc<Rbatis>,
+    tx: mpsc::Sender<ClushFrame>,
 }
 
 impl Task {
     /// create a task to process the given stream
-    fn new(stream: TcpStream, db: Arc<Rbatis>) -> Task {
-        Task { stream, db }
+    fn new(stream: TcpStream, db: Arc<Rbatis>, tx: mpsc::Sender<ClushFrame>) -> Task {
+        Task { stream, db, tx }
     }
 
     /// process the stream
