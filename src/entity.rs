@@ -3,52 +3,52 @@ use chrono::{DateTime, Utc};
 #[crud_enable]
 #[derive(Clone, Debug)]
 pub struct User {
-    id: u64,
-    username: String,
-    password: String, // sha256
-    group_list: Vec<u64>,
-    online: bool,
+    pub id: u64,
+    pub username: String,
+    pub password: String, // sha256
+    pub group_list: Vec<u64>,
+    pub online: bool,
 }
 
 #[crud_enable]
 #[derive(Clone, Debug)]
 pub struct UserMsg {
-    id: u64,
-    from_id: u64,
-    to_id: u64,
-    date_time: DateTime<Utc>,
-    content: String,
+    pub id: u64,
+    pub from_id: u64,
+    pub to_id: u64,
+    pub date_time: DateTime<Utc>,
+    pub content: String,
 }
 
 #[crud_enable]
 #[derive(Clone, Debug)]
 pub struct Group {
-    id: u64,
-    group_name: String,
+    pub id: u64,
+    pub group_name: String,
 }
 
 #[crud_enable]
 #[derive(Clone, Debug)]
 pub struct GroupMember {
-    id: u64,
-    group_id: u64,
-    user_id: u64,
-    role_id: u64,
+    pub id: u64,
+    pub group_id: u64,
+    pub user_id: u64,
+    pub role_id: u64,
 }
 
 #[crud_enable]
 #[derive(Clone, Debug)]
 pub struct GroupMsg {
-    id: u64,
-    group_id: u64,
-    user_id: u64,
-    date_time: DateTime<Utc>,
-    content: String,
+    pub id: u64,
+    pub group_id: u64,
+    pub user_id: u64,
+    pub date_time: DateTime<Utc>,
+    pub content: String,
 }
 
 #[crud_enable]
 #[derive(Clone, Debug)]
 pub struct Role {
-    id: u64,
-    role_name: String,
+    pub id: u64,
+    pub role_name: String,
 }

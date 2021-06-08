@@ -2,7 +2,8 @@ const BITS_OF_BYTE: usize = 8;
 
 /// clush message type
 pub enum MessageType {
-    Undefined,        // 0
+    Undefined,
+    LoginMessage,     // 0
     UserMessage,      // 1
     GroupMessage,     // 2
     UserFileMessage,  // 3
@@ -84,9 +85,6 @@ mod tests {
 
     #[test]
     fn u64_to_bytes_test() {
-        assert_eq!(
-            vec![0, 1, 2, 3, 4, 5, 6, 7],
-            u64_to_bytes(0x01020304050607)
-        );
+        assert_eq!(vec![0, 1, 2, 3, 4, 5, 6, 7], u64_to_bytes(0x01020304050607));
     }
 }

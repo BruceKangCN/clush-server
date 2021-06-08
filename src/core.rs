@@ -1,6 +1,9 @@
 use crate::core::config::*;
+use crate::entity::*;
 use crate::util::*;
 use bytes::{Bytes, BytesMut};
+use dashmap::DashMap;
+use rbatis::crud::CRUD;
 use rbatis::rbatis::Rbatis;
 use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, Result};
@@ -11,6 +14,7 @@ static BUF_SIZE: usize = 4096;
 
 // TODO: add tokio_rustls TLS acceptor
 // TODO: add integrity test for ClushServer
+// TODO: add tokio::sync::mpsc for message passing
 /// a clush server
 ///
 /// # Example
@@ -22,14 +26,16 @@ static BUF_SIZE: usize = 4096;
 pub struct ClushServer {
     listener: TcpListener,
     db: Arc<Rbatis>,
+    map: Arc<DashMap<u64, Task>>,
 }
 
 impl ClushServer {
     /// create a clush server with the given TCP listener
     pub fn new(listener: TcpListener, db: Rbatis) -> ClushServer {
         let db = Arc::new(db);
+        let map = Arc::new(DashMap::new());
 
-        ClushServer { listener, db }
+        ClushServer { listener, db, map }
     }
 
     /// init a clush server with the given configuration
@@ -61,10 +67,20 @@ impl ClushServer {
         loop {
             let (stream, _addr) = self.listener.accept().await?;
             let db = self.db.clone();
+            let map = self.map.clone();
 
             tokio::spawn(async move {
+                // create a new task to deal with the stream
                 let mut task = Task::new(stream, db);
-                task.process().await
+                // first login to server
+                if let Some(uid) = task.process_login().await {
+                    // store task to map if login success
+                    map.insert(uid, task);
+                    // then start to process the rest
+                    if let Some(mut task) = map.get_mut(&uid) {
+                        task.process().await.unwrap();
+                    }
+                }
             });
         }
     }
@@ -191,6 +207,7 @@ impl Task {
         );
         // get the message type id, set frame message type according to it
         match u32_from_bytes(&buf[0..4]).unwrap() {
+            0 => frame.set_msg_type(MessageType::LoginMessage),
             1 => frame.set_msg_type(MessageType::UserMessage),
             2 => frame.set_msg_type(MessageType::GroupMessage),
             3 => frame.set_msg_type(MessageType::UserFileMessage),
@@ -219,6 +236,48 @@ impl Task {
         self.stream.write(&frame.to_bytes()[..]).await?;
 
         Ok(())
+    }
+
+    /// process the login message,
+    /// return Some(uid) if login success,
+    /// or None if failed
+    async fn process_login(&mut self) -> Option<u64> {
+        // receive the first frame
+        if let Some(first_frame) = self.read_frame().await.unwrap() {
+            match first_frame.msg_type {
+                MessageType::LoginMessage => {
+                    // get uid, password from frame
+                    let uid = first_frame.from_id;
+                    let password = first_frame.content;
+                    // get user info from database
+                    let mut user = self.db.fetch_by_id::<User>("", &uid).await.unwrap();
+                    // check password
+                    if user.password == password {
+                        // if match update user info
+                        user.online = true;
+                        self.db.save::<User>("", &user).await.unwrap();
+
+                        Some(uid)
+                    } else {
+                        // if mismatch, send back an error frame
+                        let err_frame = ClushFrame::new(
+                            MessageType::UserMessage,
+                            0,
+                            uid,
+                            16,
+                            BytesMut::from("invalid password"),
+                        );
+                        self.write_frame(err_frame).await.unwrap();
+
+                        None
+                    }
+                }
+                _ => panic!("invalid login msg"),
+            }
+        } else {
+            // if failed to receive first frame, return None
+            None
+        }
     }
 
     // TODO: implement process
