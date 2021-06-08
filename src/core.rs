@@ -140,14 +140,14 @@ impl ClushFrame {
     }
 
     /// set the message type of ClushFrame
-    pub fn set_msg_type(&mut self, msg_type: MessageType) -> &mut ClushFrame {
+    pub fn set_msg_type(&mut self, msg_type: MessageType) -> &mut Self {
         self.msg_type = msg_type;
 
         self
     }
 
     /// append the given content to ClushFrame's content
-    pub fn append(&mut self, content: &[u8]) -> &mut ClushFrame {
+    pub fn append(&mut self, content: &[u8]) -> &mut Self {
         self.content.extend_from_slice(&content);
 
         self
@@ -285,7 +285,7 @@ impl Task {
                     // get user info from database
                     let user = self.db.fetch_by_id::<User>("", &uid).await.unwrap();
                     // check password
-                    if user.password == password {
+                    if user.password.unwrap() == password {
                         // TODO: fetch messages
 
                         Some(uid)
