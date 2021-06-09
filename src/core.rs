@@ -328,13 +328,17 @@ impl Task {
         }
     }
 
+    /// process a ClushFrame as user message
     async fn process_user_msg(&self, frame: ClushFrame) -> Result<()> {
+        // use auto-generated id
         let id = None;
+        // get info from frame
         let from_id = Some(frame.from_id);
         let to_id = Some(frame.to_id);
         let date_time = Some(chrono::Utc::now());
         let content = Some(String::from_utf8(frame.content.to_vec()).unwrap());
 
+        // store UserMsg into database
         let user_msg = UserMsg {
             id,
             from_id,
