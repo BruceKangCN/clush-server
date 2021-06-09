@@ -123,6 +123,16 @@ impl ClushServer {
 
                     // remove task when it is done
                     map.remove(&uid);
+                } else {
+                    // write back a failure message if login fail
+                    let frame = ClushFrame::new(
+                        MessageType::UserMessage,
+                        0,
+                        0,
+                        0,
+                        BytesMut::from("failed"),
+                    );
+                    task.write_frame(frame).await.unwrap();
                 }
             });
         }
