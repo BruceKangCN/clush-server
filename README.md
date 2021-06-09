@@ -21,6 +21,7 @@ the client is written in `C++/Qt` called [`clush-client`](https://github.com/Bru
     ```
 4. run with `cargo`  
     ```
+    # cargo test # run tests
     cargo run --release
     ```
 

@@ -5,6 +5,7 @@ use bytes::{Bytes, BytesMut};
 use dashmap::DashMap;
 use rbatis::crud::CRUD;
 use rbatis::rbatis::Rbatis;
+use std::ops::DerefMut;
 use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt, Result};
 use tokio::net::{TcpListener, TcpStream};
@@ -71,12 +72,17 @@ impl ClushServer {
     /// start the event loop
     pub async fn start(&self) -> Result<()> {
         // create a channel to handle message
-        let (tx, mut rx) = mpsc::channel::<ClushFrame>(1024);
+        let (tx, rx) = mpsc::channel::<ClushFrame>(1024);
+        let map = self.map.clone();
 
         // spawn a task to read message
         tokio::spawn(async move {
-            while let Some(frame) = rx.recv().await {
-                // TODO: message handling using MessageHandler { rx, map }
+            let mut handler = MessageHandler::new(rx, map);
+            while let Some(frame) = handler.rx.recv().await {
+                match frame.msg_type {
+                    MessageType::UserMessage => handler.handle_user_msg(frame).await,
+                    _ => (),
+                }
             }
         });
 
@@ -197,7 +203,7 @@ impl Task {
     /// process the stream
     async fn process(&mut self) -> Result<()> {
         while let Some(frame) = self.read_frame().await? {
-            self.process_frame(&frame).await?;
+            self.process_frame(frame).await?;
         }
 
         Ok(())
@@ -304,7 +310,7 @@ impl Task {
                         None
                     }
                 }
-                _ => panic!("invalid login msg"),
+                _ => panic!("invalid login message"),
             }
         } else {
             // if failed to receive first frame, return None
@@ -314,10 +320,66 @@ impl Task {
 
     // TODO: implement process
     /// process the frame according to the frame type
-    async fn process_frame(&self, frame: &ClushFrame) -> Result<()> {
+    async fn process_frame(&self, frame: ClushFrame) -> Result<()> {
         match frame.msg_type {
             MessageType::Undefined => Ok(()),
+            MessageType::UserMessage => self.process_user_msg(frame).await,
             _ => panic!("unimplemented!"),
+        }
+    }
+
+    async fn process_user_msg(&self, frame: ClushFrame) -> Result<()> {
+        let id = None;
+        let from_id = Some(frame.from_id);
+        let to_id = Some(frame.to_id);
+        let date_time = Some(chrono::Utc::now());
+        let content = Some(String::from_utf8(frame.content.to_vec()).unwrap());
+
+        let user_msg = UserMsg {
+            id,
+            from_id,
+            to_id,
+            date_time,
+            content,
+        };
+        self.db.save::<UserMsg>("", &user_msg).await.unwrap();
+
+        if let Err(_e) = self.tx.send(frame).await {
+            panic!("error occurred while sending message")
+        }
+
+        Ok(())
+    }
+}
+
+/// message handler
+struct MessageHandler {
+    rx: mpsc::Receiver<ClushFrame>,
+    map: Arc<DashMap<u64, Task>>,
+}
+
+impl MessageHandler {
+    /// create a new MessageHandler
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let (tx, rx) = mpsc::channel(1024);
+    /// let map = Arc::new(DashMap::new());
+    /// let handler = MessageHandler::new(rx, map.clone());
+    /// ```
+    fn new(rx: mpsc::Receiver<ClushFrame>, map: Arc<DashMap<u64, Task>>) -> MessageHandler {
+        MessageHandler { rx, map }
+    }
+
+    /// handle a frame of user message
+    async fn handle_user_msg(&self, frame: ClushFrame) {
+        // get (K, V) pair from DashMap, None if not exists
+        if let Some(mut pair) = self.map.get_mut(&frame.to_id) {
+            // get task from pair
+            let task = pair.deref_mut();
+            // do write frame
+            task.write_frame(frame).await.unwrap();
         }
     }
 }
