@@ -106,6 +106,16 @@ impl ClushServer {
                     // store task to map if login success
                     map.insert(uid, task);
 
+                    // write back a success information if login succeed
+                    let frame = ClushFrame::new(
+                        MessageType::UserMessage,
+                        0,
+                        uid,
+                        0,
+                        BytesMut::from("success"),
+                    );
+                    map.get_mut(&uid).unwrap().write_frame(frame).await.unwrap();
+
                     // then start to process the rest
                     if let Some(mut task) = map.get_mut(&uid) {
                         task.process().await.unwrap();
