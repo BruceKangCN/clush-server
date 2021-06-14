@@ -1,6 +1,7 @@
 const BITS_OF_BYTE: usize = 8;
 
 /// clush message type
+#[derive(Clone, Debug)]
 pub enum MessageType {
     Undefined,
     LoginMessage,     // 0

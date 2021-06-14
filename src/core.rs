@@ -140,6 +140,7 @@ impl ClushServer {
 }
 
 /// a frame used to communicate with clush client and server
+#[derive(Clone, Debug)]
 pub struct ClushFrame {
     pub msg_type: MessageType,
     pub from_id: u64,
@@ -275,6 +276,11 @@ impl Task {
             _ => return Ok(None),
         };
 
+        // if all data is received, return, otherwise start loop
+        if frame.size == frame.content.len() as u64 {
+            return Ok(Some(frame));
+        }
+
         // read the last of stream and add to content
         loop {
             let n = self.stream.read_buf(&mut buf).await?;
@@ -304,11 +310,13 @@ impl Task {
     async fn process_login(&mut self) -> Option<u64> {
         // receive the first frame
         if let Some(first_frame) = self.read_frame().await.unwrap() {
+            // handle login message, panic if others
             match first_frame.msg_type {
                 MessageType::LoginMessage => {
                     // get uid, password from frame
                     let uid = first_frame.from_id;
-                    let password = first_frame.content;
+                    let password = first_frame.content.freeze();
+
                     // get user info from database
                     let user = self.db.fetch_by_id::<User>("", &uid).await.unwrap();
                     // check password

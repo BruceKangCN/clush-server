@@ -4,7 +4,7 @@ use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 
 /// all configuration
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ClushConfig {
     #[serde(default = "ClushConfig::default_server_config")]
@@ -54,7 +54,7 @@ impl ClushConfig {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ServerConfig {
     #[serde(default = "ServerConfig::default_url")]
@@ -85,7 +85,7 @@ impl ServerConfig {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct RbatisConfig {
     #[serde(default = "RbatisConfig::default_db_url")]

@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 
-#[crud_enable]
+#[crud_enable(table_name: public."user")]
 #[derive(Clone, Debug)]
 pub struct User {
     pub id: Option<u64>,
