@@ -315,12 +315,28 @@ impl Task {
                 MessageType::LoginMessage => {
                     // get uid, password from frame
                     let uid = first_frame.from_id;
-                    let password = first_frame.content.freeze();
+                    let password_bytes = first_frame.content.freeze();
 
                     // get user info from database
                     let user = self.db.fetch_by_id::<User>("", &uid).await.unwrap();
                     // check password
-                    if user.password.unwrap() == password {
+                    if let Some(password) = user.password {
+                        let hex_to_bytes = hex_string_to_bytes(&password);
+
+                        if hex_to_bytes != password_bytes {
+                            // if mismatch, send back an error frame
+                            let mut err_frame = ClushFrame::new(
+                                MessageType::UserMessage,
+                                0,
+                                uid,
+                                0,
+                                BytesMut::from("invalid password"),
+                            );
+                            err_frame.update_size();
+                            self.write_frame(err_frame).await.unwrap();
+
+                            return None;
+                        }
                         // TODO: fetch messages
 
                         Some(uid)
@@ -331,7 +347,7 @@ impl Task {
                             0,
                             uid,
                             0,
-                            BytesMut::from("invalid password"),
+                            BytesMut::from("invalid user"),
                         );
                         err_frame.update_size();
                         self.write_frame(err_frame).await.unwrap();

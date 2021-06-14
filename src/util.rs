@@ -63,6 +63,20 @@ pub fn u64_to_bytes(number: u64) -> Vec<u8> {
     bytes
 }
 
+/// convert a string of hex to u8 vector
+pub fn hex_string_to_bytes(str: &str) -> Vec<u8> {
+    let mut hex = vec![0u8; 0];
+    let mut i = 0;
+
+    while i < str.len() {
+        let byte = u8::from_str_radix(&str[i..i + 2], 16).unwrap();
+        hex.push(byte);
+        i += 2;
+    }
+
+    hex
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -87,5 +101,10 @@ mod tests {
     #[test]
     fn u64_to_bytes_test() {
         assert_eq!(vec![0, 1, 2, 3, 4, 5, 6, 7], u64_to_bytes(0x01020304050607));
+    }
+
+    #[test]
+    fn hex_string_to_bytes_test() {
+        assert_eq!(vec![0x1c_u8, 0x8a_u8], hex_string_to_bytes("1c8a"));
     }
 }
