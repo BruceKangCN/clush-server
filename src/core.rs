@@ -108,7 +108,7 @@ impl ClushServer {
 
                     // write back a success information if login succeed
                     let frame = ClushFrame::new(
-                        MessageType::UserMessage,
+                        MessageType::LoginMessage,
                         0,
                         uid,
                         0,
@@ -126,7 +126,7 @@ impl ClushServer {
                 } else {
                     // write back a failure message if login fail
                     let frame = ClushFrame::new(
-                        MessageType::UserMessage,
+                        MessageType::LoginMessage,
                         0,
                         0,
                         0,
